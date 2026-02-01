@@ -28,10 +28,42 @@ export const LocalViewerOrchestrator = () => {
           iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
         });
 
+        peerConnectionRef.current = peerConnection;
+
+        // Handle incoming tracks
+        // peerConnection.ontrack = (event) => {
+        //   console.log("Received track:", event.track);
+        //   event.streams.getTracks().forEach((track) => {
+        //     remoteStreamRef.current.addTrack(track);
+        //   });
+
+        //   // Transition to streaming mode
+        //   setSlaveStatus({
+        //     mode: "streaming",
+        //     data: { remoteStream: remoteStreamRef.current, peerConnection },
+        //   });
+        // };
+
+        // Handle ICE candidates
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            channel.postMessage({ type: "ice-candidate", candidate: event.candidate });
+          }
+        };
+
         setSlaveStatus({
           mode: "offer-received",
           data: { offer: msg.sdp, peerConnection: peerConnection },
         });
+      }
+
+      // ICE candidate received from streamer
+      if (msg.type === "ice-candidate" && peerConnectionRef.current) {
+        try {
+          await peerConnectionRef.current.addIceCandidate(msg.candidate);
+        } catch (err) {
+          console.error("Error adding ICE candidate:", err);
+        }
       }
 
       // Stream ended - revert to awaiting

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export const SimpleViewer = () => {
+export const Viewer = () => {
   const videoElmRef = useRef<HTMLVideoElement | null>(null);
   const [pc, setPc] = useState<RTCPeerConnection | null>(null);
   const [remoteOfferSDP, setRemoteOfferSDP] = useState("");
@@ -17,7 +17,7 @@ export const SimpleViewer = () => {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <h2>SimpleViewer</h2>
+      <h2>Viewer</h2>
 
       <video ref={videoElmRef} autoPlay playsInline style={{ width: "100%", background: "#000" }} />
 

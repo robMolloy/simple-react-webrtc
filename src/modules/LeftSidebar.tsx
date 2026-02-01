@@ -29,6 +29,20 @@ export const LeftSidebar = () => {
               Scroll
             </SidebarButton>
             <SidebarButton
+              href="/simple-streamer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/simple-streamer"}
+            >
+              Simple Streamer
+            </SidebarButton>
+            <SidebarButton
+              href="/simple-viewer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/simple-viewer"}
+            >
+              Simple Viewer
+            </SidebarButton>
+            <SidebarButton
               href="/streamer"
               iconName="Ban"
               isHighlighted={location.pathname === "/streamer"}

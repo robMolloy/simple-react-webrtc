@@ -54,7 +54,7 @@ export async function startStream(p: {
   }
 }
 
-export const SimpleStreamer = () => {
+export const Streamer = () => {
   const videoElmRef = useRef<HTMLVideoElement | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [pc, setPc] = useState<RTCPeerConnection | null>(null);
@@ -104,7 +104,7 @@ export const SimpleStreamer = () => {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <h2>SimpleStreamer</h2>
+      <h2>Streamer</h2>
 
       <video
         ref={videoElmRef}
