@@ -107,6 +107,9 @@ export const LocalStreamer = () => {
     setStreaming(false);
     currentOfferRef.current = null;
     candidateQueueRef.current.length = 0;
+
+    // Notify viewers that the stream has ended
+    channelRef.current?.postMessage({ type: "stream-ended" });
   };
 
   return (

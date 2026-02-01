@@ -30,6 +30,11 @@ export const LocalViewerOrchestrator = () => {
         // offerRef.current = msg.sdp;
       }
 
+      // Stream ended - revert to awaiting
+      if (msg.type === "stream-ended") {
+        setSlaveStatus({ mode: "awaiting" });
+      }
+
       // ICE candidates while PC not created yet
       // if (msg.type === "candidate") {
       //   const candidate = msg.candidate;
