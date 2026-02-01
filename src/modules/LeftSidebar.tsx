@@ -42,6 +42,13 @@ export const LeftSidebar = () => {
             >
               Viewer
             </SidebarButton>
+            <SidebarButton
+              href="/viewer-orchestrator"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/viewer-orchestrator"}
+            >
+              Viewer Orchestrator
+            </SidebarButton>
           </>
         }
         middle={[...Array(100)].map((_, j) => (
