@@ -28,6 +28,20 @@ export const LeftSidebar = () => {
             >
               Scroll
             </SidebarButton>
+            <SidebarButton
+              href="/streamer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/streamer"}
+            >
+              Streamer
+            </SidebarButton>
+            <SidebarButton
+              href="/viewer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/viewer"}
+            >
+              Viewer
+            </SidebarButton>
           </>
         }
         middle={[...Array(100)].map((_, j) => (

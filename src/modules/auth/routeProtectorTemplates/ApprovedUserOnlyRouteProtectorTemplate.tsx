@@ -26,7 +26,6 @@ export const ApprovedUserOnlyRouteProtectorTemplate = (p: {
     return p.onIsNotApproved?.();
   }, [isLoading, isApproved]);
 
-  console.log(`ApprovedUserOnlyRouteProtectorTemplate.tsx:${/*LL*/ 29}`, { isApproved, isLoading });
 
   if (isLoading) return p.LoadingComponent;
   if (!isApproved) return p.NotApprovedComponent;
