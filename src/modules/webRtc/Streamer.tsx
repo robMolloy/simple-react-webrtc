@@ -54,7 +54,7 @@ export const SimpleStreamer = () => {
   const videoElmRef = useRef<HTMLVideoElement | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [pc, setPc] = useState<RTCPeerConnection | null>(null);
-  const [offerSDP, setOfferSDP] = useState("");
+  const [offerSDP, setOfferSDP] = useState<RTCSessionDescriptionInit | null>(null);
   const [answerSDP, setAnswerSDP] = useState("");
   const [candidateInput, setCandidateInput] = useState("");
   const [candidates, setCandidates] = useState<RTCIceCandidate[]>([]);
@@ -125,7 +125,7 @@ export const SimpleStreamer = () => {
               if (!startStreamResponse.success) return;
 
               setPc(startStreamResponse.data.pc);
-              setOfferSDP(JSON.stringify(startStreamResponse.data.offerSDP, null, 2));
+              setOfferSDP(startStreamResponse.data.offerSDP);
             }}
           >
             Send Stream
@@ -134,7 +134,15 @@ export const SimpleStreamer = () => {
 
         <div style={{ marginTop: 10 }}>
           <label>Local Offer SDP:</label>
-          <textarea rows={10} style={{ width: "100%" }} readOnly value={offerSDP} />
+          <textarea
+            rows={10}
+            onClick={() => {
+              console.log(`src/modules/webRtc/Streamer.tsx:${/*LL*/ 137}`, { offerSDP });
+            }}
+            style={{ width: "100%" }}
+            readOnly
+            value={offerSDP ? JSON.stringify(offerSDP, null, 2) : ""}
+          />
         </div>
 
         {/* Apply Answer Section */}
@@ -145,7 +153,7 @@ export const SimpleStreamer = () => {
               rows={10}
               style={{ width: "100%" }}
               value={answerSDP}
-              onChange={function (event) {
+              onChange={(event) => {
                 setAnswerSDP(event.target.value);
               }}
             />
