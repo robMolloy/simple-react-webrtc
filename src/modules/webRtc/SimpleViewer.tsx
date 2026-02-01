@@ -21,7 +21,6 @@ export const SimpleViewer = () => {
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log("Viewer ICE candidate:", event.candidate);
           // Send ICE candidate to streamer - convert to plain object
           channel.postMessage({
             type: "ice-candidate",
@@ -34,7 +33,6 @@ export const SimpleViewer = () => {
       // Listen for offer from streamer
       channel.onmessage = async (event) => {
         if (event.data.type === "offer" && peerConnectionRef.current) {
-          console.log("Viewer received offer");
           await peerConnectionRef.current.setRemoteDescription(event.data.offer);
 
           const answer = await peerConnectionRef.current.createAnswer();
@@ -44,18 +42,14 @@ export const SimpleViewer = () => {
             type: "answer",
             answer: answer,
           });
-          console.log("Viewer sent answer");
         } else if (
           event.data.type === "ice-candidate" &&
           event.data.sender === "streamer" &&
           peerConnectionRef.current
         ) {
           await peerConnectionRef.current.addIceCandidate(event.data.candidate);
-          console.log("Viewer received ICE candidate");
         }
       };
-
-      console.log("Viewer ready to receive offer");
     };
 
     startViewing();

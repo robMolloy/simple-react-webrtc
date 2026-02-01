@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
 export const SimpleStreamer = () => {
@@ -14,10 +15,10 @@ export const SimpleStreamer = () => {
     channel.onmessage = async (event) => {
       if (event.data.type === "answer" && peerConnectionRef.current) {
         await peerConnectionRef.current.setRemoteDescription(event.data.answer);
-        console.log("Streamer received answer");
-      } else if (event.data.type === "ice-candidate" && peerConnectionRef.current) {
+      }
+
+      if (event.data.type === "ice-candidate" && peerConnectionRef.current) {
         await peerConnectionRef.current.addIceCandidate(event.data.candidate);
-        console.log("Streamer received ICE candidate");
       }
     };
 
@@ -40,7 +41,6 @@ export const SimpleStreamer = () => {
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log("Streamer ICE candidate:", event.candidate);
           // Send ICE candidate to viewer
           channel.postMessage({
             type: "ice-candidate",
@@ -54,7 +54,6 @@ export const SimpleStreamer = () => {
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
 
-      console.log("Streamer offer:", offer);
       setOfferCreated(true);
     };
 
@@ -70,7 +69,6 @@ export const SimpleStreamer = () => {
 
   const sendOffer = () => {
     if (peerConnectionRef.current?.localDescription && channelRef.current) {
-      console.log(`src/modules/webRtc/SimpleStreamer.tsx:${/*LL*/ 72}`, {});
       channelRef.current.postMessage({
         type: "offer",
         offer: {
@@ -78,7 +76,6 @@ export const SimpleStreamer = () => {
           sdp: peerConnectionRef.current.localDescription.sdp,
         },
       });
-      console.log("Offer sent to viewer");
     }
   };
 
@@ -87,9 +84,9 @@ export const SimpleStreamer = () => {
       <h2>Simple Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
-        <button onClick={sendOffer} disabled={!offerCreated}>
+        <Button onClick={sendOffer} disabled={!offerCreated}>
           Send Offer to Viewer
-        </button>
+        </Button>
       </div>
     </div>
   );
