@@ -3,6 +3,8 @@ import { LocalViewerSlave, type LocalViewerSlaveStatus } from "./LocalViewerSlav
 
 export const LocalViewerOrchestrator = () => {
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const remoteStreamRef = useRef<MediaStream>(new MediaStream());
   const [slaveStatus, setSlaveStatus] = useState<LocalViewerSlaveStatus>({
     mode: "awaiting",
   });
@@ -21,17 +23,29 @@ export const LocalViewerOrchestrator = () => {
 
       // Offer received from streamer
       if (msg.type === "offer") {
-        setSlaveStatus({ mode: "offer-received", data: { offer: msg.sdp } });
+        // Create peer connection
+        const peerConnection = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+
+        setSlaveStatus({
+          mode: "offer-received",
+          data: { offer: msg.sdp, peerConnection: peerConnection },
+        });
       }
 
       // Stream ended - revert to awaiting
       if (msg.type === "stream-ended") {
-        setSlaveStatus({ mode: "awaiting" });
+        handleDisconnect();
       }
     };
 
     return () => {
       channel.close();
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
     };
   }, []);
 
@@ -41,6 +55,12 @@ export const LocalViewerOrchestrator = () => {
   };
 
   const handleDisconnect = () => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    remoteStreamRef.current.getTracks().forEach((track) => track.stop());
+    remoteStreamRef.current = new MediaStream();
     setSlaveStatus({ mode: "awaiting" });
     channelRef.current?.postMessage({ type: "request-offer" });
   };

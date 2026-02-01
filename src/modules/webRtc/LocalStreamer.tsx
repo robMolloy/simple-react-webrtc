@@ -45,7 +45,10 @@ export const LocalStreamer = () => {
       }
     };
 
-    return () => channel.close();
+    return () => {
+      channelRef.current?.postMessage({ type: "stream-ended" });
+      channel.close();
+    };
   }, []);
 
   // Update video srcObject when localStream changes

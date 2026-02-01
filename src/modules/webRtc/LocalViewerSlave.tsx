@@ -2,8 +2,11 @@ import { useEffect, useRef } from "react";
 
 export type LocalViewerSlaveStatus =
   | { mode: "awaiting" }
-  | { mode: "offer-received"; data: { offer: RTCSessionDescriptionInit } }
-  | { mode: "streaming"; data: { remoteStream: MediaStream } };
+  | {
+      mode: "offer-received";
+      data: { offer: RTCSessionDescriptionInit; peerConnection: RTCPeerConnection };
+    }
+  | { mode: "streaming"; data: { remoteStream: MediaStream; peerConnection: RTCPeerConnection } };
 
 // Component for awaiting status
 const AwaitingStatus = () => {
@@ -13,20 +16,23 @@ const AwaitingStatus = () => {
 // Component for offer-received status
 const OfferReceivedStatus = ({
   offer,
+  peerConnection,
   onAnswerCreated,
 }: {
   offer: RTCSessionDescriptionInit;
+  peerConnection: RTCPeerConnection;
   onAnswerCreated?: (answer: RTCSessionDescriptionInit) => void;
 }) => {
   const handleStartStream = async () => {
-    try {
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-      });
+    if (!peerConnection) {
+      console.error("peerConnection is not initialized");
+      return;
+    }
 
-      await pc.setRemoteDescription(offer);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+    try {
+      await peerConnection.setRemoteDescription(offer);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
 
       onAnswerCreated?.(answer);
     } catch (err) {
@@ -87,7 +93,11 @@ export const LocalViewerSlave = (p: {
       {status.mode === "awaiting" && <AwaitingStatus />}
 
       {status.mode === "offer-received" && (
-        <OfferReceivedStatus offer={status.data.offer} onAnswerCreated={onAnswerCreated} />
+        <OfferReceivedStatus
+          peerConnection={status.data.peerConnection}
+          offer={status.data.offer}
+          onAnswerCreated={onAnswerCreated}
+        />
       )}
 
       {status.mode === "streaming" && (
