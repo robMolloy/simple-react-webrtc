@@ -53,6 +53,26 @@ export const LocalViewer = () => {
     };
   }, []);
 
+  // Handle disconnect and reset to waiting state
+  const handleDisconnect = () => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    
+    // Clear remote stream tracks
+    remoteStream.getTracks().forEach((track) => track.stop());
+    
+    // Reset state
+    setStreaming(false);
+    setOfferReceived(false);
+    offerRef.current = null;
+    candidateQueueRef.current = [];
+    
+    // Ask for new offer
+    channelRef.current?.postMessage({ type: "request-offer" });
+  };
+
   // Start streaming when user clicks button
   const startStream = async () => {
     const offer = offerRef.current;
@@ -79,6 +99,14 @@ export const LocalViewer = () => {
           type: "candidate",
           candidate: event.candidate.toJSON(),
         });
+      }
+    };
+
+    // Handle connection state changes
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state:", pc.connectionState);
+      if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
+        handleDisconnect();
       }
     };
 
@@ -127,13 +155,18 @@ export const LocalViewer = () => {
       )}
 
       {streaming && (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          style={{ width: "100%", background: "#000", marginTop: 10 }}
-        />
+        <>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{ width: "100%", background: "#000", marginTop: 10 }}
+          />
+          <button onClick={handleDisconnect} style={{ marginTop: 10 }}>
+            Disconnect
+          </button>
+        </>
       )}
     </div>
   );
