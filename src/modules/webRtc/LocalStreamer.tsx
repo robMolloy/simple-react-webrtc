@@ -9,47 +9,33 @@ export const LocalStreamer = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [streaming, setStreaming] = useState(false);
 
-  // Get local camera/mic on mount
-  useEffect(() => {
-    const init = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setLocalStream(stream);
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    };
-    init();
-  }, []);
-
-  // Create BroadcastChannel on mount
+  // Initialize BroadcastChannel on mount
   useEffect(() => {
     const channel = new BroadcastChannel("webrtc-demo");
     channelRef.current = channel;
 
     channel.onmessage = async (event) => {
       const msg = event.data;
+      if (!msg || typeof msg !== "object") return;
 
-      // Late joiner requests current offer
       if (msg.type === "request-offer" && currentOfferRef.current) {
         channel.postMessage({ type: "offer", sdp: currentOfferRef.current });
       }
 
-      // Viewer sends ICE candidate
       if (msg.type === "candidate") {
         const pc = pcRef.current;
-        if (pc) {
+        const candidate = msg.candidate;
+        if (pc && candidate) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch {
-            candidateQueueRef.current.push(msg.candidate);
+            candidateQueueRef.current.push(candidate);
           }
-        } else {
-          candidateQueueRef.current.push(msg.candidate);
+        } else if (candidate) {
+          candidateQueueRef.current.push(candidate);
         }
       }
 
-      // Viewer sends answer
       if (msg.type === "answer" && pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(msg.sdp);
@@ -62,80 +48,94 @@ export const LocalStreamer = () => {
     return () => channel.close();
   }, []);
 
-  const startStreaming = async () => {
-    if (!localStream || streaming) return;
-
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
-    pcRef.current = peerConnection;
-
-    // Add local tracks
-    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
-
-    // Send ICE candidates to viewers
-    peerConnection.onicecandidate = (event) => {
-      if (!event.candidate) return;
-      try {
-        channelRef.current?.postMessage({
-          type: "candidate",
-          candidate: event.candidate.toJSON(),
-        });
-      } catch (err) {
-        console.warn("Failed to send ICE candidate:", err);
-      }
-    };
-
-    // Create and set local offer
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
-    currentOfferRef.current = offer;
-    channelRef.current?.postMessage({ type: "offer", sdp: offer });
-
-    // Apply any queued ICE candidates from viewers
-    for (const c of candidateQueueRef.current) {
-      try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(c));
-      } catch (err) {
-        console.warn("Failed to add queued ICE candidate:", err);
-      }
+  // Update video srcObject when localStream changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = localStream;
     }
-    candidateQueueRef.current.length = 0;
+  }, [localStream]);
 
-    setStreaming(true);
+  const startStreaming = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setLocalStream(stream);
+
+      const peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
+      pcRef.current = peerConnection;
+
+      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          channelRef.current?.postMessage({
+            type: "candidate",
+            candidate: event.candidate.toJSON(),
+          });
+        }
+      };
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      currentOfferRef.current = offer;
+      channelRef.current?.postMessage({ type: "offer", sdp: offer });
+
+      // Apply queued ICE candidates
+      for (const c of candidateQueueRef.current) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+        } catch {
+          console.warn("Failed to add queued ICE candidate:", c);
+        }
+      }
+      candidateQueueRef.current.length = 0;
+
+      setStreaming(true);
+    } catch (err) {
+      console.error("Failed to start streaming:", err);
+    }
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      const pc = pcRef.current;
-      if (pc) {
-        pc.onicecandidate = null;
-        pc.close();
-        pcRef.current = null;
-      }
-      channelRef.current?.close();
-    };
-  }, []);
+  const hangUp = () => {
+    pcRef.current?.close();
+    pcRef.current = null;
+
+    localStream?.getTracks().forEach((t) => t.stop());
+    setLocalStream(null);
+    setStreaming(false);
+    currentOfferRef.current = null;
+    candidateQueueRef.current.length = 0;
+  };
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
       <h2>Local Streamer</h2>
+
+      {/* Video is always in the DOM, hidden if not streaming */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        style={{ width: "100%", background: "#000" }}
+        style={{
+          width: "100%",
+          background: "#000",
+          display: streaming ? "block" : "none",
+          marginTop: 10,
+        }}
       />
-      <button
-        onClick={startStreaming}
-        disabled={!localStream || streaming}
-        style={{ marginTop: 10 }}
-      >
-        Start Streaming
-      </button>
+
+      {!streaming ? (
+        <button onClick={startStreaming} style={{ marginTop: 10 }}>
+          Start Streaming
+        </button>
+      ) : (
+        <button onClick={hangUp} style={{ marginTop: 10 }}>
+          Hang Up
+        </button>
+      )}
     </div>
   );
 };

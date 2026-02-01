@@ -5,116 +5,136 @@ export const LocalViewer = () => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const candidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
-
-  // Single remote stream for all incoming tracks
+  const offerRef = useRef<RTCSessionDescriptionInit | null>(null);
   const [remoteStream] = useState<MediaStream>(() => new MediaStream());
 
-  // Attach remoteStream once
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
+  const [offerReceived, setOfferReceived] = useState(false); // streamer detected
+  const [streaming, setStreaming] = useState(false); // viewer clicked start
 
+  // Listen for potential streamer
   useEffect(() => {
     const channel = new BroadcastChannel("webrtc-demo");
     channelRef.current = channel;
 
-    // Ask for current offer in case streamer started first
+    // Ask for offer in case streamer started first
     channel.postMessage({ type: "request-offer" });
 
     channel.onmessage = async (event) => {
       const msg = event.data;
+      if (!msg || typeof msg !== "object") return;
 
-      // Streamer sends offer
-      if (msg.type === "offer") {
-        // Prevent multiple PeerConnections if offer arrives again
-        if (pcRef.current) return;
+      // Offer received from streamer
+      if (msg.type === "offer" && !pcRef.current) {
+        setOfferReceived(true);
 
-        const peerConnection = new RTCPeerConnection({
-          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-        });
-
-        pcRef.current = peerConnection;
-
-        // Handle incoming tracks
-        peerConnection.ontrack = (event) => {
-          event.streams[0]?.getTracks().forEach((track) => {
-            if (!remoteStream.getTracks().some((t) => t.id === track.id)) {
-              remoteStream.addTrack(track);
-            }
-          });
-        };
-
-        // Send ICE candidates back to streamer safely
-        peerConnection.onicecandidate = (event) => {
-          if (!event.candidate) return;
-
-          try {
-            channelRef.current?.postMessage({
-              type: "candidate",
-              candidate: event.candidate.toJSON(),
-            });
-          } catch (err) {
-            console.warn("Failed to send ICE candidate:", err);
-          }
-        };
-
-        // Set remote offer
-        await peerConnection.setRemoteDescription(msg.sdp);
-
-        // Create and send local answer
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        channel.postMessage({ type: "answer", sdp: answer });
-
-        // Apply queued ICE candidates
-        for (const c of candidateQueueRef.current) {
-          try {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(c));
-          } catch (err) {
-            console.warn("Failed to add queued ICE candidate:", err);
-          }
-        }
-        candidateQueueRef.current.length = 0;
+        // Store the offer temporarily; will set up peer when user clicks start
+        offerRef.current = msg.sdp;
       }
 
-      // Streamer sends ICE candidate
+      // ICE candidates while PC not created yet
       if (msg.type === "candidate") {
-        const pc = pcRef.current;
-        if (pc) {
+        const candidate = msg.candidate;
+        if (!pcRef.current && candidate) {
+          candidateQueueRef.current.push(candidate);
+        } else if (pcRef.current && candidate) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
           } catch {
-            candidateQueueRef.current.push(msg.candidate);
+            candidateQueueRef.current.push(candidate);
           }
-        } else {
-          candidateQueueRef.current.push(msg.candidate);
         }
       }
     };
 
     return () => {
-      // Close BroadcastChannel and PeerConnection on unmount
       channel.close();
-      if (pcRef.current) {
-        pcRef.current.onicecandidate = null;
-        pcRef.current.close();
-        pcRef.current = null;
-      }
+      pcRef.current?.close();
+      pcRef.current = null;
     };
   }, []);
 
+  // Start streaming when user clicks button
+  const startStream = async () => {
+    const offer = offerRef.current;
+    if (!offer) return;
+
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+    pcRef.current = pc;
+
+    // Handle remote tracks
+    pc.ontrack = (event) => {
+      event.streams[0]?.getTracks().forEach((track) => {
+        if (!remoteStream.getTracks().some((t) => t.id === track.id)) {
+          remoteStream.addTrack(track);
+        }
+      });
+    };
+
+    // Send ICE candidates to streamer
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        channelRef.current?.postMessage({
+          type: "candidate",
+          candidate: event.candidate.toJSON(),
+        });
+      }
+    };
+
+    try {
+      await pc.setRemoteDescription(offer);
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      channelRef.current?.postMessage({ type: "answer", sdp: answer });
+
+      // Apply queued ICE candidates
+      for (const c of candidateQueueRef.current) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(c));
+        } catch {
+          console.warn("Failed to add queued ICE candidate", c);
+        }
+      }
+      candidateQueueRef.current = [];
+      offerRef.current = null;
+
+      setStreaming(true);
+    } catch (err) {
+      console.error("Failed to start stream:", err);
+    }
+  };
+
+  // Attach stream to video
+  useEffect(() => {
+    if (streaming && videoRef.current) {
+      videoRef.current.srcObject = remoteStream;
+    }
+  }, [streaming, remoteStream]);
+
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
       <h2>Local Viewer</h2>
-      <video
-        ref={videoRef}
-        muted
-        autoPlay
-        playsInline
-        style={{ width: "100%", background: "#000" }}
-      />
+
+      {!offerReceived && <p>Waiting for stream...</p>}
+
+      {offerReceived && !streaming && (
+        <button onClick={startStream} style={{ marginTop: 10 }}>
+          Start Stream
+        </button>
+      )}
+
+      {streaming && (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ width: "100%", background: "#000", marginTop: 10 }}
+        />
+      )}
     </div>
   );
 };
