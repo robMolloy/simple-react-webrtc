@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "@/modules/auth/formTemplates/Link";
+import { Link } from "@/modules/auth/formTemplates/formHelperTemplates/Link";
 
 export const Error404Screen = () => {
   return (

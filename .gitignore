@@ -25,5 +25,3 @@ dist-ssr
 
 pocketbase-leader/pb_data/*
 !pocketbase-leader/pb_data/backups
-
-pocketbase-leader/pb_migrations/*

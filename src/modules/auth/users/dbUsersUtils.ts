@@ -9,8 +9,6 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string(),
-  status: z.enum(["pending", "approved", "blocked"]),
-  role: z.enum(["standard", "admin"]),
   emailVisibility: z.boolean(),
   verified: z.boolean(),
   created: z.string(),
@@ -109,28 +107,6 @@ export const smartSubscribeToUsers = async (p: {
   });
 
   return { success: true, data: unsub } as const;
-};
-
-export const updateUserStatus = async (p: {
-  pb: PocketBase;
-  id: string;
-  status: TUser["status"];
-}) => {
-  try {
-    const resp = await p.pb.collection(collectionName).update(p.id, { status: p.status });
-    return { success: true, data: resp } as const;
-  } catch (error) {
-    return { success: false, error } as const;
-  }
-};
-
-export const updateUserRole = async (p: { pb: PocketBase; id: string; role: TUser["role"] }) => {
-  try {
-    const resp = await p.pb.collection(collectionName).update(p.id, { role: p.role });
-    return { success: true, data: resp } as const;
-  } catch (error) {
-    return { success: false, error } as const;
-  }
 };
 
 export const deleteUser = async (p: { pb: PocketBase; id: string }) => {

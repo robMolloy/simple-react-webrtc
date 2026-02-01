@@ -5,8 +5,8 @@ import { confirmVerificationEmail, type TUser } from "@/modules/auth/dbAuthUtils
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "@/modules/auth/formTemplates/FormFeedbackMessages";
-import { SimpleCard } from "@/modules/auth/formTemplates/SimpleCard";
+} from "@/modules/auth/formTemplates/formHelperTemplates/FormFeedbackMessages";
+import { SimpleCard } from "@/modules/auth/formTemplates/formHelperTemplates/SimpleCard";
 import { useNavigate } from "react-router-dom";
 
 export const ConfirmVerificationSuccessScreen = () => {

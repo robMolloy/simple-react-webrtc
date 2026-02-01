@@ -5,7 +5,7 @@ import { requestVerificationEmail, type TUser } from "@/modules/auth/dbAuthUtils
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "@/modules/auth/formTemplates/FormFeedbackMessages";
+} from "@/modules/auth/formTemplates/formHelperTemplates/FormFeedbackMessages";
 import type { PocketBase } from "@/modules/auth/pocketbaseTypeHelpers";
 
 export const AwaitingVerificationScreen = (p: { pb: PocketBase; user: TUser }) => {

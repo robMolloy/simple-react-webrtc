@@ -1,39 +1,48 @@
+import { toast } from "sonner";
 import { z } from "zod";
 
-const findMessagesInObjectOfObjects = (p: {
-  obj: Record<string, unknown>;
-  onFoundMessage: (p: { message: string; key: string }) => void;
-}) => {
-  Object.entries(p.obj)
-    .map(([key, innerObj]) => ({ ...messageObjSchema.safeParse(innerObj), key }))
-    .filter((val) => val.success)
-    .map((val) => ({ message: val.data.message, key: val.key }))
-    .forEach((keyMessageObj) => p.onFoundMessage(keyMessageObj));
+export const toastMultiMessages = (messages: string[]) => {
+  const [message1, ...otherMessages] = messages;
+
+  toast(message1, {
+    description: otherMessages ? (
+      <div>
+        {otherMessages.map((message) => (
+          <div key={message}>{message}</div>
+        ))}
+      </div>
+    ) : undefined,
+  });
 };
 
-const objSchema = z.record(z.string(), z.unknown());
+const outerSchema = z.record(z.string(), z.unknown());
+const innerSchema = outerSchema;
 const messageObjSchema = z.object({ message: z.string() });
 const errorSchema = z.object({
   message: z.string().optional(),
   response: z.object({
-    data: objSchema.transform((outerObj) => {
+    data: outerSchema.transform((outerObj) => {
       const messages: string[] = [];
 
-      const pushMessagesFromObjectOfObjects = (obj: Record<string, unknown>) => {
-        findMessagesInObjectOfObjects({
-          obj,
-          onFoundMessage: (msgKeyObj) => messages.push(`${msgKeyObj.message} (${msgKeyObj.key})`),
-        });
-      };
-      // shallow objects
-      pushMessagesFromObjectOfObjects(outerObj);
-
-      // deep objects
       Object.values(outerObj)
-        .map((innerObj) => objSchema.safeParse(innerObj))
-        .filter((val) => val.success)
-        .map((val) => val.data)
-        .forEach((innerObj) => pushMessagesFromObjectOfObjects(innerObj));
+        .map((innerObj) => {
+          const innerParsed = innerSchema.safeParse(innerObj);
+          return innerParsed.success ? innerParsed.data : null;
+        })
+        .filter((val) => !!val)
+        .map((innerObj) => {
+          return Object.values(innerObj)
+            .map((messageObj) => {
+              const messageObjParsed = messageObjSchema.safeParse(messageObj);
+              return messageObjParsed.success ? messageObjParsed.data : null;
+            })
+            .filter((val) => !!val);
+        })
+        .forEach((outerValue) => {
+          outerValue.forEach((messageObj) => {
+            messages.push(messageObj.message);
+          });
+        });
 
       return { messages };
     }),

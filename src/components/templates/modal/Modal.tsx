@@ -15,10 +15,7 @@ export const Modal = () => {
   const modalStore = useModalStore();
 
   return (
-    <Dialog
-      open={!!modalStore.data}
-      onOpenChange={() => modalStore.setData(null)}
-    >
+    <Dialog open={!!modalStore.data} onOpenChange={() => modalStore.setData(null)}>
       {modalStore.data}
     </Dialog>
   );
@@ -45,16 +42,17 @@ export const ModalContent = (p: {
 export const ConfirmationModalContent = (p: {
   title: string;
   description: string;
+  content?: ReactNode;
   onConfirm: () => void;
 }) => {
   const modalStore = useModalStore();
-
   return (
     <ModalContent
       title={p.title}
       description={p.description}
+      content={p.content}
       footer={
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="flex gap-4">
           <Button variant="destructive" onClick={() => modalStore.close()}>
             Cancel
           </Button>

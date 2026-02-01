@@ -9,7 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "../formTemplates/FormFeedbackMessages";
+} from "../formTemplates/formHelperTemplates/FormFeedbackMessages";
 import { TextInput } from "@/components/custom/CustomInputs";
 
 export const RequestPasswordResetForm = (p: { pb: PocketBase }) => {

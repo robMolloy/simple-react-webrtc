@@ -5,9 +5,9 @@ import { signinWithOAuth2Google } from "@/modules/auth/dbAuthUtils";
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "@/modules/auth/formTemplates/FormFeedbackMessages";
-import { Link } from "@/modules/auth/formTemplates/Link";
-import { SimpleCard } from "@/modules/auth/formTemplates/SimpleCard";
+} from "@/modules/auth/formTemplates/formHelperTemplates/FormFeedbackMessages";
+import { Link } from "@/modules/auth/formTemplates/formHelperTemplates/Link";
+import { SimpleCard } from "@/modules/auth/formTemplates/formHelperTemplates/SimpleCard";
 import { LoggedOutUserOnlyRoute } from "@/modules/routeProtector/LoggedOutUserOnlyRoute";
 
 export default function Page() {

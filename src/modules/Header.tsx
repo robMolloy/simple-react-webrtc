@@ -2,8 +2,13 @@ import { CustomIcon } from "@/components/custom/CustomIcon";
 import { HeaderTemplate } from "@/components/templates/HeaderTemplate";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "./themeToggle/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { logout } from "./auth/dbAuthUtils";
+import { pb } from "@/config/pocketbaseConfig";
+import { useCurrentUserStore } from "./auth/authDataStore";
 
 export const Header = () => {
+  const currentUserStore = useCurrentUserStore();
   return (
     <HeaderTemplate
       Left={
@@ -12,7 +17,17 @@ export const Header = () => {
           <span className="font-bold">pokkit Starter</span>
         </Link>
       }
-      Right={<ThemeToggle />}
+      Right={
+        <div className="flex gap-2">
+          {currentUserStore.data.authStatus === "loggedIn" && (
+            <Button variant="outline" onClick={() => logout({ pb })}>
+              <CustomIcon iconName="LogOutIcon" size="lg" />
+              Sign out
+            </Button>
+          )}
+          <ThemeToggle />
+        </div>
+      }
     />
   );
 };

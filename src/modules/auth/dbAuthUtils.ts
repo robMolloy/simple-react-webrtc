@@ -10,7 +10,7 @@ export const pocketbaseAuthStoreSchema = z.object({
 export type TAuth = z.infer<typeof pocketbaseAuthStoreSchema>;
 export type TUser = z.infer<typeof userSchema>;
 type TUserSignInSeed = Pick<TUser, "email"> & { password: string };
-type TUserSignUpSeed = Pick<TUser, "email" | "name" | "emailVisibility" | "role" | "status"> & {
+type TUserSignUpSeed = Pick<TUser, "email" | "name" | "emailVisibility"> & {
   password: string;
   passwordConfirm: string;
 };
@@ -86,7 +86,6 @@ export const requestVerificationEmail = async (p: { pb: PocketBase; email: strin
 export const confirmVerificationEmail = async (p: { pb: PocketBase; token: string }) => {
   try {
     const resp = await p.pb.collection(collectionName).confirmVerification(p.token);
-    console.log(`dbAuthUtils.ts:${/*LL*/ 89}`, { resp });
 
     const schema = z.literal(true);
     schema.parse(resp);
@@ -183,7 +182,6 @@ export const signupWithOAuth2Google = async (p: { pb: PocketBase }) => {
   try {
     const data = await p.pb.collection(collectionName).authWithOAuth2({
       provider: "google",
-      createData: { status: "pending", role: "standard" },
     });
 
     return {

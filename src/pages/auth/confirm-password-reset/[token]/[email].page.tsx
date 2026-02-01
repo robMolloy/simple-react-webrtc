@@ -1,7 +1,7 @@
 import { CenteredItemTemplate } from "@/components/templates/CenteredItemTemplate";
 import { pb } from "@/config/pocketbaseConfig";
 import { ConfirmPasswordResetForm } from "@/modules/auth/forms/ConfirmPasswordResetForm";
-import { SimpleCard } from "@/modules/auth/formTemplates/SimpleCard";
+import { SimpleCard } from "@/modules/auth/formTemplates/formHelperTemplates/SimpleCard";
 import { LoggedOutUserOnlyRoute } from "@/modules/routeProtector/LoggedOutUserOnlyRoute";
 import { Link, useParams } from "react-router-dom";
 

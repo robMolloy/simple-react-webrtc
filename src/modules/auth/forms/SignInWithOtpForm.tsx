@@ -8,7 +8,7 @@ import type { PocketBase } from "../pocketbaseTypeHelpers";
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "../formTemplates/FormFeedbackMessages";
+} from "../formTemplates/formHelperTemplates/FormFeedbackMessages";
 
 export const SignInWithOtpForm = (p: { pb: PocketBase }) => {
   const [isLoading, setIsLoading] = useState(false);

@@ -6,11 +6,12 @@ import {
 import { useEffect } from "react";
 import type { PocketBase } from "./pocketbaseTypeHelpers";
 import { subscribeToUser } from "./users/dbUsersUtils";
+import type { TUser } from "./dbAuthUtils";
 
 export const useInitAuth = (p: {
   pb: PocketBase;
   onIsLoading: () => void;
-  onIsLoggedIn: () => void;
+  onIsLoggedIn: (x: TUser) => void;
   onIsLoggedOut: () => void;
 }) => {
   const unverifiedIsLoggedInStore = useUnverifiedIsLoggedInStore();
@@ -44,7 +45,8 @@ export const useInitAuth = (p: {
 
   useEffect(() => {
     if (currentUserStore.data.authStatus === "loading") return p.onIsLoading();
-    if (currentUserStore.data.authStatus === "loggedIn") return p.onIsLoggedIn();
+    if (currentUserStore.data.authStatus === "loggedIn")
+      return p.onIsLoggedIn(currentUserStore.data.user);
     if (currentUserStore.data.authStatus === "loggedOut") return p.onIsLoggedOut();
 
     console.error("should never be hit");

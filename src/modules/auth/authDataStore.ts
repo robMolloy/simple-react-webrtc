@@ -25,7 +25,8 @@ export const useUnverifiedIsLoggedInSync = (p: { pb: PocketBase }) => {
   }, []);
 
   useEffect(() => {
-    p.pb.authStore.onChange(() => {
+    p.pb.authStore.onChange((x) => {
+      console.log(`authDataStore.ts:${/*LL*/ 29}`, { x });
       if (!p.pb.authStore.isValid) return isLoggedInStore.setData({ authStatus: "loggedOut" });
 
       const resp = pocketbaseAuthStoreSchema.safeParse(p.pb.authStore);

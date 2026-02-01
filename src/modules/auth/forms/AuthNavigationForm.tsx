@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SimpleCard } from "../formTemplates/SimpleCard";
+import { SimpleCard } from "../formTemplates/formHelperTemplates/SimpleCard";
 import type { AuthMethodsList } from "pocketbase";
 import { useNavigate } from "react-router-dom";
-import { Link } from "../formTemplates/Link";
+import { Link } from "../formTemplates/formHelperTemplates/Link";
 
 export const AuthNavigationForm = (p: { authMethodsList: AuthMethodsList }) => {
   const navigate = useNavigate();

@@ -7,7 +7,7 @@ import type { PocketBase } from "../pocketbaseTypeHelpers";
 import {
   FormFeedbackMessages,
   useFormFeedbackMessages,
-} from "../formTemplates/FormFeedbackMessages";
+} from "../formTemplates/formHelperTemplates/FormFeedbackMessages";
 import { TextInput } from "@/components/custom/CustomInputs";
 
 export const ConfirmPasswordResetForm = (p: {

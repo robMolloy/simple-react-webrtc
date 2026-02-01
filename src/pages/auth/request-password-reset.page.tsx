@@ -1,8 +1,8 @@
 import { CenteredItemTemplate } from "@/components/templates/CenteredItemTemplate";
 import { pb } from "@/config/pocketbaseConfig";
 import { RequestPasswordResetForm } from "@/modules/auth/forms/RequestPasswordResetForm";
-import { Link } from "@/modules/auth/formTemplates/Link";
-import { SimpleCard } from "@/modules/auth/formTemplates/SimpleCard";
+import { Link } from "@/modules/auth/formTemplates/formHelperTemplates/Link";
+import { SimpleCard } from "@/modules/auth/formTemplates/formHelperTemplates/SimpleCard";
 import { LoggedOutUserOnlyRoute } from "@/modules/routeProtector/LoggedOutUserOnlyRoute";
 
 export default function Page() {

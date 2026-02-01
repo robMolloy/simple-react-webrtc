@@ -1,5 +1,11 @@
 import { cn } from "@/lib/utils";
 import {
+  LogOutIcon,
+  Key,
+  Mail,
+  FileTextIcon,
+  Link,
+  Shield,
   Ban,
   Clock,
   ChevronDown,
@@ -30,6 +36,7 @@ import {
   Monitor,
   X,
   Check,
+  CheckCircleIcon,
   Circle,
   MoreVertical,
   Upload,
@@ -41,6 +48,12 @@ import {
 } from "lucide-react";
 
 const iconMap = {
+  LogOutIcon,
+  Key,
+  Mail,
+  FileTextIcon,
+  Link,
+  Shield,
   Ban,
   Clock,
   ChevronDown,
@@ -71,6 +84,7 @@ const iconMap = {
   Monitor,
   X,
   Check,
+  CheckCircleIcon,
   Circle,
   MoreVertical,
   Upload,
@@ -96,9 +110,10 @@ export const CustomIcon = (p: {
   iconName: keyof typeof iconMap;
   size: keyof typeof iconSizeClass;
   className?: string;
+  color?: string;
 }) => {
   const Icon = iconMap[p.iconName];
   const sizeClass = iconSizeClass[p.size];
 
-  return <Icon className={cn(sizeClass, p.className)} />;
+  return <Icon color={p.color} className={cn(sizeClass, p.className)} />;
 };

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useCurrentUserStore } from "./auth/authDataStore";
 import { logout } from "./auth/dbAuthUtils";
+import { useGlobalUserPermissionsStore } from "./auth/globalUserPermissions/globalUserPermissionsStore";
 
 export const LeftSidebar = () => {
   const currentUserStore = useCurrentUserStore();
+  const globalUserPermissionsStore = useGlobalUserPermissionsStore();
   const [scrollItemIndex, setScrollItemIndex] = useState(0);
 
   const location = useLocation();
@@ -39,11 +41,22 @@ export const LeftSidebar = () => {
           </SidebarButton>
         ))}
         bottom={
-          currentUserStore.data.authStatus === "loggedIn" && (
-            <SidebarButton iconName="LogOut" isHighlighted={false} onClick={() => logout({ pb })}>
-              Log Out
-            </SidebarButton>
-          )
+          <>
+            {globalUserPermissionsStore.data?.role == "admin" && (
+              <SidebarButton
+                href="/users"
+                iconName="Users"
+                isHighlighted={location.pathname === "/users"}
+              >
+                Users
+              </SidebarButton>
+            )}
+            {currentUserStore.data.authStatus === "loggedIn" && (
+              <SidebarButton iconName="LogOut" isHighlighted={false} onClick={() => logout({ pb })}>
+                Log Out
+              </SidebarButton>
+            )}
+          </>
         }
       />
     </div>
