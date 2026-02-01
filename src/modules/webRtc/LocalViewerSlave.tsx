@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 
 export type LocalViewerSlaveStatus =
-  | { mode: "awaiting" | "offer-received" }
+  | { mode: "awaiting" }
+  | { mode: "offer-received"; data: { offer: RTCSessionDescriptionInit } }
   | { mode: "streaming"; data: { remoteStream: MediaStream } };
 
 // Component for awaiting status
@@ -10,9 +11,31 @@ const AwaitingStatus = () => {
 };
 
 // Component for offer-received status
-const OfferReceivedStatus = ({ onStartStreamRequest }: { onStartStreamRequest?: () => void }) => {
+const OfferReceivedStatus = ({
+  offer,
+  onAnswerCreated,
+}: {
+  offer: RTCSessionDescriptionInit;
+  onAnswerCreated?: (answer: RTCSessionDescriptionInit) => void;
+}) => {
+  const handleStartStream = async () => {
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
+
+      await pc.setRemoteDescription(offer);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      onAnswerCreated?.(answer);
+    } catch (err) {
+      console.error("Failed to create answer:", err);
+    }
+  };
+
   return (
-    <button onClick={() => onStartStreamRequest?.()} style={{ marginTop: 10 }}>
+    <button onClick={handleStartStream} style={{ marginTop: 10 }}>
       Start Stream
     </button>
   );
@@ -54,11 +77,8 @@ export const LocalViewerSlave = (p: {
   status: LocalViewerSlaveStatus;
   onAnswerCreated?: (answer: RTCSessionDescriptionInit) => void;
   onDisconnect?: () => void;
-  onIceCandidate?: (candidate: RTCIceCandidateInit) => void;
-  onStartStreamRequest?: () => void;
-  onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
 }) => {
-  const { status, onDisconnect, onStartStreamRequest } = p;
+  const { status, onAnswerCreated, onDisconnect } = p;
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
@@ -67,7 +87,7 @@ export const LocalViewerSlave = (p: {
       {status.mode === "awaiting" && <AwaitingStatus />}
 
       {status.mode === "offer-received" && (
-        <OfferReceivedStatus onStartStreamRequest={onStartStreamRequest} />
+        <OfferReceivedStatus offer={status.data.offer} onAnswerCreated={onAnswerCreated} />
       )}
 
       {status.mode === "streaming" && (
