@@ -22,14 +22,10 @@ export const SimpleViewer = () => {
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
           console.log("Viewer ICE candidate:", event.candidate);
-          // Send ICE candidate to streamer - extract properties manually
+          // Send ICE candidate to streamer - convert to plain object
           channel.postMessage({
             type: "ice-candidate",
-            candidate: {
-              candidate: event.candidate.candidate,
-              sdpMid: event.candidate.sdpMid,
-              sdpMLineIndex: event.candidate.sdpMLineIndex,
-            },
+            candidate: event.candidate.toJSON(),
             sender: "viewer",
           });
         }
@@ -46,10 +42,7 @@ export const SimpleViewer = () => {
 
           channel.postMessage({
             type: "answer",
-            answer: {
-              type: answer.type,
-              sdp: answer.sdp,
-            },
+            answer: answer,
           });
           console.log("Viewer sent answer");
         } else if (
@@ -78,7 +71,7 @@ export const SimpleViewer = () => {
   return (
     <div>
       <h2>Simple Viewer</h2>
-      <video ref={videoElementRef} autoPlay playsInline style={{ width: "400px" }} />
+      <video ref={videoElementRef} autoPlay playsInline muted style={{ width: "400px" }} />
     </div>
   );
 };

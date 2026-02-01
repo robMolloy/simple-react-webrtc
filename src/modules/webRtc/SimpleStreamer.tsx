@@ -41,10 +41,11 @@ export const SimpleStreamer = () => {
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
           console.log("Streamer ICE candidate:", event.candidate);
-          // Send ICE candidate to viewer - convert to plain object
+          // Send ICE candidate to viewer
           channel.postMessage({
             type: "ice-candidate",
             candidate: JSON.stringify(event.candidate),
+            // candidate: event.candidate.toJSON(),
             sender: "streamer",
           });
         }
