@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  LocalViewerSlave,
-  type LocalViewerSlaveCallbacks,
-  type LocalViewerSlaveStatus,
-} from "./LocalViewerSlave";
+import { LocalViewerSlave, type LocalViewerSlaveStatus } from "./LocalViewerSlave";
 
 export const LocalViewerOrchestrator = () => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -12,8 +8,9 @@ export const LocalViewerOrchestrator = () => {
   const offerRef = useRef<RTCSessionDescriptionInit | null>(null);
   const [remoteStream] = useState<MediaStream>(() => new MediaStream());
 
-  const [offerReceived, setOfferReceived] = useState(false);
-  const [streaming, setStreaming] = useState(false);
+  const [slaveStatus, setSlaveStatus] = useState<LocalViewerSlaveStatus>({
+    mode: "awaiting",
+  });
 
   // Listen for potential streamer
   useEffect(() => {
@@ -29,7 +26,7 @@ export const LocalViewerOrchestrator = () => {
 
       // Offer received from streamer
       if (msg.type === "offer" && !pcRef.current) {
-        setOfferReceived(true);
+        setSlaveStatus({ mode: "offer-received" });
         offerRef.current = msg.sdp;
       }
 
@@ -66,8 +63,7 @@ export const LocalViewerOrchestrator = () => {
     remoteStream.getTracks().forEach((track) => track.stop());
 
     // Reset state
-    setStreaming(false);
-    setOfferReceived(false);
+    setSlaveStatus({ mode: "awaiting" });
     offerRef.current = null;
     candidateQueueRef.current = [];
 
@@ -131,7 +127,7 @@ export const LocalViewerOrchestrator = () => {
       candidateQueueRef.current = [];
       offerRef.current = null;
 
-      setStreaming(true);
+      setSlaveStatus({ mode: "streaming", data: { remoteStream } });
     } catch (err) {
       console.error("Failed to start stream:", err);
     }
@@ -153,20 +149,14 @@ export const LocalViewerOrchestrator = () => {
     console.log("Connection state changed:", state);
   };
 
-  // Build status for slave
-  const slaveStatus: LocalViewerSlaveStatus = {
-    mode: streaming ? "streaming" : offerReceived ? "offer-received" : "awaiting",
-    data: streaming ? { remoteStream } : undefined,
-  };
-
-  // Build callbacks for slave
-  const slaveCallbacks: LocalViewerSlaveCallbacks = {
-    onAnswerCreated: handleAnswerCreated,
-    onDisconnect: handleDisconnect,
-    onIceCandidate: handleIceCandidate,
-    onStartStreamRequest: handleStartStreamRequest,
-    onConnectionStateChange: handleConnectionStateChange,
-  };
-
-  return <LocalViewerSlave status={slaveStatus} callbacks={slaveCallbacks} />;
+  return (
+    <LocalViewerSlave
+      status={slaveStatus}
+      onAnswerCreated={handleAnswerCreated}
+      onDisconnect={handleDisconnect}
+      onIceCandidate={handleIceCandidate}
+      onStartStreamRequest={handleStartStreamRequest}
+      onConnectionStateChange={handleConnectionStateChange}
+    />
+  );
 };
