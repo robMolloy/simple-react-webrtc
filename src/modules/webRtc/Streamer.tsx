@@ -21,7 +21,11 @@ export async function startStream(p: {
   try {
     if (!cameraStream) throw new Error("No camera stream provided");
 
-    const peerConnection = new RTCPeerConnection();
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }, // public STUN server
+      ],
+    });
 
     // Add camera tracks to the connection
     cameraStream.getTracks().forEach(function (track) {
@@ -132,21 +136,28 @@ export const SimpleStreamer = () => {
           </button>
         )}
 
-        <div style={{ marginTop: 10 }}>
-          <label>Local Offer SDP:</label>
-          <textarea
-            rows={10}
-            onClick={() => {
-              console.log(`src/modules/webRtc/Streamer.tsx:${/*LL*/ 137}`, { offerSDP });
-            }}
-            style={{ width: "100%" }}
-            readOnly
-            value={offerSDP ? JSON.stringify(offerSDP, null, 2) : ""}
-          />
-        </div>
+        {offerSDP && (
+          <div style={{ marginTop: 10 }}>
+            <label>Local Offer SDP:</label>
+            <textarea
+              rows={10}
+              style={{ width: "100%" }}
+              readOnly
+              value={offerSDP ? JSON.stringify(offerSDP, null, 2) : ""}
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(offerSDP, null, 2));
+                console.log(`src/modules/webRtc/Streamer.tsx:${/*LL*/ 137}`, { offerSDP });
+              }}
+            >
+              Copy to clipboard
+            </button>
+          </div>
+        )}
 
         {/* Apply Answer Section */}
-        {pc && answerSDP && (
+        {pc && (
           <div style={{ marginTop: 10 }}>
             <label>Remote Answer SDP:</label>
             <textarea
