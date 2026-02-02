@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const SimpleStreamer = () => {
+export const LocalOnlyStreamer = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -65,7 +65,7 @@ export const SimpleStreamer = () => {
 
   return (
     <div>
-      <h2>Simple Streamer</h2>
+      <h2>Local Only Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
         <Button onClick={startStreaming} disabled={isStreaming}>

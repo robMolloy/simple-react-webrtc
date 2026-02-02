@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const SimpleViewer = () => {
+export const LocalOnlyViewer = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -52,7 +52,7 @@ export const SimpleViewer = () => {
 
   return (
     <div>
-      <h2>Simple Viewer</h2>
+      <h2>Local Only Viewer</h2>
       <video ref={videoElementRef} autoPlay playsInline muted style={{ width: "400px" }} />
       <div>
         <Button onClick={createAnswerFromOffer} disabled={!offerReceived || answerCreated}>

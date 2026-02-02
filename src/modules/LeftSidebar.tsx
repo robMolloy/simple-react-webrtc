@@ -29,39 +29,18 @@ export const LeftSidebar = () => {
               Scroll
             </SidebarButton>
             <SidebarButton
-              href="/simple-streamer"
+              href="/local-only-streamer"
               iconName="Ban"
-              isHighlighted={location.pathname === "/simple-streamer"}
+              isHighlighted={location.pathname === "/local-only-streamer"}
             >
-              Simple Streamer
+              Local Only Streamer
             </SidebarButton>
             <SidebarButton
-              href="/simple-viewer"
+              href="/local-only-viewer"
               iconName="Ban"
-              isHighlighted={location.pathname === "/simple-viewer"}
+              isHighlighted={location.pathname === "/local-only-viewer"}
             >
-              Simple Viewer
-            </SidebarButton>
-            <SidebarButton
-              href="/streamer"
-              iconName="Ban"
-              isHighlighted={location.pathname === "/streamer"}
-            >
-              Streamer
-            </SidebarButton>
-            <SidebarButton
-              href="/viewer"
-              iconName="Ban"
-              isHighlighted={location.pathname === "/viewer"}
-            >
-              Viewer
-            </SidebarButton>
-            <SidebarButton
-              href="/viewer-orchestrator"
-              iconName="Ban"
-              isHighlighted={location.pathname === "/viewer-orchestrator"}
-            >
-              Viewer Orchestrator
+              Local Only Viewer
             </SidebarButton>
           </>
         }
