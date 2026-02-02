@@ -42,6 +42,20 @@ export const LeftSidebar = () => {
             >
               Local Only Viewer
             </SidebarButton>
+            <SidebarButton
+              href="/remote-streamer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/remote-streamer"}
+            >
+              Remote Streamer
+            </SidebarButton>
+            <SidebarButton
+              href="/remote-viewer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/remote-viewer"}
+            >
+              Remote Viewer
+            </SidebarButton>
           </>
         }
         middle={[...Array(100)].map((_, j) => (

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const LocalOnlyViewer = () => {
+export const RemoteViewer = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -58,7 +58,7 @@ export const LocalOnlyViewer = () => {
       await peerConnectionRef.current.setRemoteDescription(pendingOfferRef.current);
 
       const answer = await peerConnectionRef.current.createAnswer();
-      await peerConnectionRef.current.setLocalDescription(answer);
+      await peerConnectionRef.current.setRemoteDescription(answer);
 
       channelRef.current?.postMessage({ type: "answer", answer });
 
@@ -68,7 +68,7 @@ export const LocalOnlyViewer = () => {
 
   return (
     <div>
-      <h2>Local Only Viewer</h2>
+      <h2>Remote Viewer</h2>
       <video ref={videoElementRef} autoPlay playsInline muted style={{ width: "400px" }} />
       <div>
         <Button onClick={createAnswerFromOffer} disabled={!offerReceived || answerCreated}>

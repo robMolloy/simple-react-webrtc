@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const LocalOnlyStreamer = () => {
+export const RemoteStreamer = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -31,33 +31,33 @@ export const LocalOnlyStreamer = () => {
     const peerConnection = new RTCPeerConnection();
     peerConnectionRef.current = peerConnection;
 
-    const localStream = await navigator.mediaDevices.getUserMedia({
+    const remoteStream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
     });
 
     if (videoElementRef.current) {
-      videoElementRef.current.srcObject = localStream;
+      videoElementRef.current.srcObject = remoteStream;
     }
 
-    localStream.getTracks().forEach((track) => {
-      peerConnection.addTrack(track, localStream);
+    remoteStream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, remoteStream);
     });
 
     const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
+    await peerConnection.setRemoteDescription(offer);
 
     setIsStreaming(true);
     setOfferCreated(true);
   };
 
   const sendOffer = () => {
-    if (peerConnectionRef.current?.localDescription && channelRef.current) {
+    if (peerConnectionRef.current?.remoteDescription && channelRef.current) {
       channelRef.current.postMessage({
         type: "offer",
         offer: {
-          type: peerConnectionRef.current.localDescription.type,
-          sdp: peerConnectionRef.current.localDescription.sdp,
+          type: peerConnectionRef.current.remoteDescription.type,
+          sdp: peerConnectionRef.current.remoteDescription.sdp,
         },
       });
     }
@@ -84,7 +84,7 @@ export const LocalOnlyStreamer = () => {
 
   return (
     <div>
-      <h2>Local Only Streamer</h2>
+      <h2>Remote Only Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
         <Button onClick={startStreaming} disabled={isStreaming}>
