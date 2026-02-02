@@ -43,6 +43,20 @@ export const LeftSidebar = () => {
               Local Only Viewer
             </SidebarButton>
             <SidebarButton
+              href="/local-with-callbacks-streamer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/local-with-callbacks-streamer"}
+            >
+              Local With Callbacks Streamer
+            </SidebarButton>
+            <SidebarButton
+              href="/local-with-callbacks-viewer"
+              iconName="Ban"
+              isHighlighted={location.pathname === "/local-with-callbacks-viewer"}
+            >
+              Local With Callbacks Viewer
+            </SidebarButton>
+            <SidebarButton
               href="/remote-streamer"
               iconName="Ban"
               isHighlighted={location.pathname === "/remote-streamer"}
