@@ -26,6 +26,22 @@ export const LocalOnlyViewer = () => {
       if (event.data.type === "offer") {
         pendingOfferRef.current = event.data.offer;
         setOfferReceived(true);
+      } else if (event.data.type === "stop") {
+        // Handle stream stop
+        if (videoElementRef.current) {
+          videoElementRef.current.srcObject = null;
+        }
+        peerConnectionRef.current?.close();
+        const newPeerConnection = new RTCPeerConnection();
+        peerConnectionRef.current = newPeerConnection;
+        newPeerConnection.ontrack = (event) => {
+          if (videoElementRef.current && event.streams[0]) {
+            videoElementRef.current.srcObject = event.streams[0];
+          }
+        };
+        setOfferReceived(false);
+        setAnswerCreated(false);
+        pendingOfferRef.current = null;
       }
     };
 

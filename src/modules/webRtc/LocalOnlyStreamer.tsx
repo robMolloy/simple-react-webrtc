@@ -75,6 +75,9 @@ export const LocalOnlyStreamer = () => {
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
+    // Notify viewer that stream has stopped
+    channelRef.current?.postMessage({ type: "stop" });
+
     setIsStreaming(false);
     setOfferCreated(false);
   };
