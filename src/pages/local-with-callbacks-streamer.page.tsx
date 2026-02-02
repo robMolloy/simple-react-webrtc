@@ -13,9 +13,7 @@ export default function Page() {
     channelRef.current = channel;
 
     channel.onmessage = async (event) => {
-      if (event.data.type === "answer") {
-        setAnswer(event.data.answer);
-      }
+      if (event.data.type === "answer") setAnswer(event.data.answer);
     };
 
     return () => {
@@ -38,8 +36,8 @@ export default function Page() {
       <MainFixedLayout>
         <H1>Local With Callbacks Streamer</H1>
         <LocalWithCallbacksStreamer
-          onSendOffer={handleSendOffer}
-          onSendStop={handleSendStop}
+          handleSendOffer={handleSendOffer}
+          handleSendStop={handleSendStop}
           answer={answer}
         />
       </MainFixedLayout>

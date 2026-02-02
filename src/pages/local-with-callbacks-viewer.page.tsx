@@ -17,7 +17,10 @@ export default function Page() {
       if (event.data.type === "offer") {
         setOffer(event.data.offer);
         setStopped(false);
-      } else if (event.data.type === "stop") {
+        return;
+      }
+
+      if (event.data.type === "stop") {
         setStopped(true);
         setOffer(null);
       }
@@ -29,18 +32,16 @@ export default function Page() {
     };
   }, []);
 
-  const handleSendAnswer = (answer: RTCSessionDescriptionInit) => {
-    channelRef.current?.postMessage({ type: "answer", answer });
-  };
-
   return (
     <LoggedInUserOnlyRoute>
       <MainFixedLayout>
         <H1>Local With Callbacks Viewer</H1>
         <LocalWithCallbacksViewer
-          onSendAnswer={handleSendAnswer}
           offer={offer}
           stopped={stopped}
+          onSendAnswer={(answer: RTCSessionDescriptionInit) =>
+            channelRef.current?.postMessage({ type: "answer", answer })
+          }
         />
       </MainFixedLayout>
     </LoggedInUserOnlyRoute>
