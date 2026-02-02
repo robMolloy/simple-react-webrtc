@@ -5,6 +5,7 @@ export const SimpleStreamer = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [offerCreated, setOfferCreated] = useState(false);
 
   useEffect(() => {
@@ -16,48 +17,7 @@ export const SimpleStreamer = () => {
       if (event.data.type === "answer" && peerConnectionRef.current) {
         await peerConnectionRef.current.setRemoteDescription(event.data.answer);
       }
-
-      if (event.data.type === "ice-candidate" && peerConnectionRef.current) {
-        await peerConnectionRef.current.addIceCandidate(event.data.candidate);
-      }
     };
-
-    const startStreaming = async () => {
-      const peerConnection = new RTCPeerConnection();
-      peerConnectionRef.current = peerConnection;
-
-      const localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      if (videoElementRef.current) {
-        videoElementRef.current.srcObject = localStream;
-      }
-
-      localStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, localStream);
-      });
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          // Send ICE candidate to viewer
-          channel.postMessage({
-            type: "ice-candidate",
-            candidate: JSON.stringify(event.candidate),
-            // candidate: event.candidate.toJSON(),
-            sender: "streamer",
-          });
-        }
-      };
-
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-
-      setOfferCreated(true);
-    };
-
-    startStreaming();
 
     return () => {
       peerConnectionRef.current?.close();
@@ -66,6 +26,30 @@ export const SimpleStreamer = () => {
       channelRef.current = null;
     };
   }, []);
+
+  const startStreaming = async () => {
+    const peerConnection = new RTCPeerConnection();
+    peerConnectionRef.current = peerConnection;
+
+    const localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+
+    if (videoElementRef.current) {
+      videoElementRef.current.srcObject = localStream;
+    }
+
+    localStream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, localStream);
+    });
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    setIsStreaming(true);
+    setOfferCreated(true);
+  };
 
   const sendOffer = () => {
     if (peerConnectionRef.current?.localDescription && channelRef.current) {
@@ -84,6 +68,9 @@ export const SimpleStreamer = () => {
       <h2>Simple Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
+        <Button onClick={startStreaming} disabled={isStreaming}>
+          Start Streaming
+        </Button>
         <Button onClick={sendOffer} disabled={!offerCreated}>
           Send Offer to Viewer
         </Button>
