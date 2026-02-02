@@ -1,31 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const LocalWithCallbacksStreamer = () => {
+export const LocalWithCallbacksStreamer = (p: {
+  onSendOffer: (offer: RTCSessionDescriptionInit) => void;
+  onSendStop: () => void;
+  answer: RTCSessionDescriptionInit | null;
+}) => {
+  const { onSendOffer, onSendStop, answer } = p;
+
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const channelRef = useRef<BroadcastChannel | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [offerCreated, setOfferCreated] = useState(false);
 
   useEffect(() => {
-    const channel = new BroadcastChannel("webrtc-demo2");
-    channelRef.current = channel;
-
-    // Listen for answer from viewer
-    channel.onmessage = async (event) => {
-      if (event.data.type === "answer" && peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(event.data.answer);
+    const handleAnswer = async () => {
+      if (answer && peerConnectionRef.current) {
+        await peerConnectionRef.current.setRemoteDescription(answer);
       }
     };
-
-    return () => {
-      peerConnectionRef.current?.close();
-      peerConnectionRef.current = null;
-      channel.close();
-      channelRef.current = null;
-    };
-  }, []);
+    handleAnswer();
+  }, [answer]);
 
   const startStreaming = async () => {
     const peerConnection = new RTCPeerConnection();
@@ -52,13 +47,10 @@ export const LocalWithCallbacksStreamer = () => {
   };
 
   const sendOffer = () => {
-    if (peerConnectionRef.current?.localDescription && channelRef.current) {
-      channelRef.current.postMessage({
-        type: "offer",
-        offer: {
-          type: peerConnectionRef.current.localDescription.type,
-          sdp: peerConnectionRef.current.localDescription.sdp,
-        },
+    if (peerConnectionRef.current?.localDescription) {
+      onSendOffer({
+        type: peerConnectionRef.current.localDescription.type,
+        sdp: peerConnectionRef.current.localDescription.sdp,
       });
     }
   };
@@ -76,7 +68,7 @@ export const LocalWithCallbacksStreamer = () => {
     peerConnectionRef.current = null;
 
     // Notify viewer that stream has stopped
-    channelRef.current?.postMessage({ type: "stop" });
+    onSendStop();
 
     setIsStreaming(false);
     setOfferCreated(false);
