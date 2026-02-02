@@ -63,6 +63,22 @@ export const LocalOnlyStreamer = () => {
     }
   };
 
+  const stopStreaming = () => {
+    // Stop all media tracks
+    if (videoElementRef.current?.srcObject) {
+      const stream = videoElementRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoElementRef.current.srcObject = null;
+    }
+
+    // Close peer connection
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
+
+    setIsStreaming(false);
+    setOfferCreated(false);
+  };
+
   return (
     <div>
       <h2>Local Only Streamer</h2>
@@ -73,6 +89,9 @@ export const LocalOnlyStreamer = () => {
         </Button>
         <Button onClick={sendOffer} disabled={!offerCreated}>
           Send Offer to Viewer
+        </Button>
+        <Button onClick={stopStreaming} variant="destructive" disabled={!isStreaming}>
+          Stop Streaming
         </Button>
       </div>
     </div>
