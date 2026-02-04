@@ -1,24 +1,19 @@
 import { Button } from "@/components/ui/button";
+import type { TCommsHandler } from "@/pages/local-with-callbacks-streamer.page";
 import { useEffect, useRef, useState } from "react";
 
-const useStreamerWebRtc = (p: {
-  handleSendOffer: (offer: RTCSessionDescription) => void;
-  handleSendStop: () => void;
-  answer: RTCSessionDescriptionInit | null;
-}) => {
+type TStreamingStatus = { success: false } | { success: true; stream: MediaStream };
+
+const useStreamerWebRtc = (p: { commsHandler: TCommsHandler }) => {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const [streamingStatus, setStreamingStatus] = useState<
-    { success: false } | { success: true; stream: MediaStream }
-  >({
-    success: false,
-  });
+  const [streamingStatus, setStreamingStatus] = useState<TStreamingStatus>({ success: false });
 
   useEffect(() => {
     (async () => {
-      if (p.answer && peerConnectionRef.current)
-        await peerConnectionRef.current.setRemoteDescription(p.answer);
+      if (p.commsHandler.answer && peerConnectionRef.current)
+        await peerConnectionRef.current.setRemoteDescription(p.commsHandler.answer);
     })();
-  }, [p.answer]);
+  }, [p.commsHandler.answer]);
 
   const startStreaming = async () => {
     const peerConnection = new RTCPeerConnection();
@@ -42,14 +37,14 @@ const useStreamerWebRtc = (p: {
   const sendOffer = () => {
     if (!peerConnectionRef.current?.localDescription) return;
 
-    p.handleSendOffer(peerConnectionRef.current.localDescription);
+    p.commsHandler.sendOffer(peerConnectionRef.current.localDescription);
   };
 
   const stopStreaming = () => {
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
-    p.handleSendStop();
+    p.commsHandler.sendStop();
 
     if (!streamingStatus.success) return;
 
@@ -60,23 +55,18 @@ const useStreamerWebRtc = (p: {
   return { startStreaming, sendOffer, stopStreaming, streamingStatus };
 };
 
-export const LocalWithCallbacksStreamer = (p: {
-  handleSendOffer: (offer: RTCSessionDescriptionInit) => void;
-  handleSendStop: () => void;
-  answer: RTCSessionDescriptionInit | null;
-}) => {
+export const LocalWithCallbacksStreamer = (p: { commsHandler: TCommsHandler }) => {
   const videoElementRef = useRef<HTMLVideoElement>(null!);
 
   const { startStreaming, streamingStatus, sendOffer, stopStreaming } = useStreamerWebRtc({
-    handleSendOffer: p.handleSendOffer,
-    handleSendStop: p.handleSendStop,
-    answer: p.answer,
+    commsHandler: p.commsHandler,
   });
 
   useEffect(() => {
     if (!videoElementRef.current) return;
     videoElementRef.current.srcObject = streamingStatus.success ? streamingStatus.stream : null;
   }, [streamingStatus]);
+
   return (
     <div>
       <h2>Local With Callbacks Streamer</h2>

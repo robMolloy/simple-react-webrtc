@@ -4,6 +4,12 @@ import { LoggedInUserOnlyRoute } from "@/modules/routeProtector/LoggedInUserOnly
 import { LocalWithCallbacksStreamer } from "@/modules/webRtc/LocalWithCallbacksStreamer";
 import { useEffect, useRef, useState } from "react";
 
+export type TCommsHandler = {
+  sendOffer: (offer: RTCSessionDescriptionInit) => void;
+  sendStop: () => void;
+  answer: RTCSessionDescriptionInit | null;
+};
+
 const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [answer, setAnswer] = useState<RTCSessionDescriptionInit | null>(null);
@@ -34,21 +40,17 @@ const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
     setAnswer(null);
   };
 
-  return { answer, sendOffer, sendStop };
+  return { answer, sendOffer, sendStop } as TCommsHandler;
 };
 
 export default function Page() {
-  const { answer, sendOffer, sendStop } = useStreamerWebRtcCommsAcrossTabs("webrtc-demo2");
+  const commsHandler = useStreamerWebRtcCommsAcrossTabs("webrtc-demo2");
 
   return (
     <LoggedInUserOnlyRoute>
       <MainFixedLayout>
         <H1>Local With Callbacks Streamer</H1>
-        <LocalWithCallbacksStreamer
-          handleSendOffer={sendOffer}
-          handleSendStop={sendStop}
-          answer={answer}
-        />
+        <LocalWithCallbacksStreamer commsHandler={commsHandler} />
       </MainFixedLayout>
     </LoggedInUserOnlyRoute>
   );
