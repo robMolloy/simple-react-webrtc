@@ -1,48 +1,38 @@
 import { Button } from "@/components/ui/button";
-import type { TCommsHandler } from "@/pages/local-with-callbacks-streamer.page";
+import type { TStreamerWebRtcCommsHandler } from "@/pages/local-with-callbacks-streamer.page";
 import { useEffect, useRef, useState } from "react";
 
 type TStreamingStatus = { success: false } | { success: true; stream: MediaStream };
 
-const useStreamerWebRtc = (p: { commsHandler: TCommsHandler }) => {
+const useStreamerWebRtc = (p: { commsHandler: TStreamerWebRtcCommsHandler }) => {
   const peerConnectionRef = useRef<RTCPeerConnection>(new RTCPeerConnection());
   const [streamingStatus, setStreamingStatus] = useState<TStreamingStatus>({ success: false });
 
   useEffect(() => {
-    if (!p.commsHandler.answer) return;
-    peerConnectionRef.current.setRemoteDescription(p.commsHandler.answer);
+    if (p.commsHandler.answer)
+      peerConnectionRef.current.setRemoteDescription(p.commsHandler.answer);
   }, [p.commsHandler.answer]);
 
   const startStreaming = async () => {
-    const peerConnection = new RTCPeerConnection();
-    peerConnectionRef.current = peerConnection;
+    const peerConnection = peerConnectionRef.current;
 
-    const localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    setStreamingStatus({ success: true, stream: localStream });
-
+    const localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+    setStreamingStatus({ success: true, stream: localStream });
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-
-    return localStream;
   };
 
   const sendOffer = () => {
-    if (!peerConnectionRef.current?.localDescription) return;
-
-    p.commsHandler.sendOffer(peerConnectionRef.current.localDescription);
+    if (peerConnectionRef.current?.localDescription)
+      p.commsHandler.sendOffer(peerConnectionRef.current.localDescription);
   };
 
   const stopStreaming = () => {
+    p.commsHandler.sendStop();
     peerConnectionRef.current?.close();
     peerConnectionRef.current = new RTCPeerConnection();
-
-    p.commsHandler.sendStop();
 
     if (!streamingStatus.success) return;
 
@@ -53,30 +43,39 @@ const useStreamerWebRtc = (p: { commsHandler: TCommsHandler }) => {
   return { startStreaming, sendOffer, stopStreaming, streamingStatus };
 };
 
-export const LocalWithCallbacksStreamer = (p: { commsHandler: TCommsHandler }) => {
+export const LocalWithCallbacksStreamer = (p: { commsHandler: TStreamerWebRtcCommsHandler }) => {
   const videoElementRef = useRef<HTMLVideoElement>(null!);
 
-  const { startStreaming, streamingStatus, sendOffer, stopStreaming } = useStreamerWebRtc({
-    commsHandler: p.commsHandler,
-  });
+  const streamerWebRtc = useStreamerWebRtc({ commsHandler: p.commsHandler });
 
   useEffect(() => {
-    if (!videoElementRef.current) return;
-    videoElementRef.current.srcObject = streamingStatus.success ? streamingStatus.stream : null;
-  }, [streamingStatus]);
+    videoElementRef.current.srcObject = streamerWebRtc.streamingStatus.success
+      ? streamerWebRtc.streamingStatus.stream
+      : null;
+  }, [streamerWebRtc.streamingStatus]);
 
   return (
     <div>
       <h2>Local With Callbacks Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
-        <Button onClick={startStreaming} disabled={streamingStatus.success}>
+        <Button
+          onClick={streamerWebRtc.startStreaming}
+          disabled={streamerWebRtc.streamingStatus.success}
+        >
           Start Streaming
         </Button>
-        <Button onClick={sendOffer} disabled={!streamingStatus.success}>
+        <Button
+          onClick={streamerWebRtc.sendOffer}
+          disabled={!streamerWebRtc.streamingStatus.success}
+        >
           Send Offer to Viewer
         </Button>
-        <Button onClick={stopStreaming} variant="destructive" disabled={!streamingStatus.success}>
+        <Button
+          onClick={streamerWebRtc.stopStreaming}
+          variant="destructive"
+          disabled={!streamerWebRtc.streamingStatus.success}
+        >
           Stop Streaming
         </Button>
       </div>
