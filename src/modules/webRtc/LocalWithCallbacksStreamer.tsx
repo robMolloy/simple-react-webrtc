@@ -5,10 +5,9 @@ const useStreamerWebRtc = (p: {
   handleSendOffer: (offer: RTCSessionDescriptionInit) => void;
   answer: RTCSessionDescriptionInit | null;
 }) => {
-  const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [offerCreated, setOfferCreated] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -26,9 +25,7 @@ const useStreamerWebRtc = (p: {
       audio: true,
     });
 
-    if (videoElementRef.current) {
-      videoElementRef.current.srcObject = localStream;
-    }
+    streamRef.current = localStream;
 
     localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
 
@@ -36,7 +33,6 @@ const useStreamerWebRtc = (p: {
     await peerConnection.setLocalDescription(offer);
 
     setIsStreaming(true);
-    setOfferCreated(true);
   };
 
   const sendOffer = () =>
@@ -46,28 +42,15 @@ const useStreamerWebRtc = (p: {
     });
 
   const stopStreaming = () => {
-    if (videoElementRef.current?.srcObject) {
-      const stream = videoElementRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoElementRef.current.srcObject = null;
-    }
-
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+
     setIsStreaming(false);
-    setOfferCreated(false);
   };
 
-  return {
-    videoElementRef,
-    isStreaming,
-    offerCreated,
-    canSendOffer: offerCreated && !!peerConnectionRef.current?.localDescription,
-    startStreaming,
-    sendOffer,
-    stopStreaming,
-  };
+  return { streamRef, isStreaming, startStreaming, sendOffer, stopStreaming };
 };
 
 export const LocalWithCallbacksStreamer = (p: {
@@ -76,12 +59,18 @@ export const LocalWithCallbacksStreamer = (p: {
   answer: RTCSessionDescriptionInit | null;
 }) => {
   const { handleSendStop } = p;
+  const videoElementRef = useRef<HTMLVideoElement>(null!);
 
-  const { videoElementRef, isStreaming, canSendOffer, startStreaming, sendOffer, stopStreaming } =
-    useStreamerWebRtc({
-      handleSendOffer: p.handleSendOffer,
-      answer: p.answer,
-    });
+  const { streamRef, isStreaming, startStreaming, sendOffer, stopStreaming } = useStreamerWebRtc({
+    handleSendOffer: p.handleSendOffer,
+    answer: p.answer,
+  });
+
+  useEffect(() => {
+    if (videoElementRef.current && streamRef.current) {
+      videoElementRef.current.srcObject = streamRef.current;
+    }
+  }, [streamRef.current]);
 
   return (
     <div>
@@ -91,7 +80,7 @@ export const LocalWithCallbacksStreamer = (p: {
         <Button onClick={startStreaming} disabled={isStreaming}>
           Start Streaming
         </Button>
-        <Button onClick={sendOffer} disabled={!canSendOffer}>
+        <Button onClick={sendOffer} disabled={!isStreaming}>
           Send Offer to Viewer
         </Button>
         <Button
