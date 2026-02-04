@@ -5,14 +5,12 @@ import { useEffect, useRef, useState } from "react";
 type TStreamingStatus = { success: false } | { success: true; stream: MediaStream };
 
 const useStreamerWebRtc = (p: { commsHandler: TCommsHandler }) => {
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection>(new RTCPeerConnection());
   const [streamingStatus, setStreamingStatus] = useState<TStreamingStatus>({ success: false });
 
   useEffect(() => {
-    (async () => {
-      if (p.commsHandler.answer && peerConnectionRef.current)
-        await peerConnectionRef.current.setRemoteDescription(p.commsHandler.answer);
-    })();
+    if (!p.commsHandler.answer) return;
+    peerConnectionRef.current.setRemoteDescription(p.commsHandler.answer);
   }, [p.commsHandler.answer]);
 
   const startStreaming = async () => {
@@ -42,7 +40,7 @@ const useStreamerWebRtc = (p: { commsHandler: TCommsHandler }) => {
 
   const stopStreaming = () => {
     peerConnectionRef.current?.close();
-    peerConnectionRef.current = null;
+    peerConnectionRef.current = new RTCPeerConnection();
 
     p.commsHandler.sendStop();
 
