@@ -33,7 +33,7 @@ const useViewerWebRtcCommsAcrossTabs = (channelName: string) => {
   const sendAnswer = (answer: RTCSessionDescriptionInit) =>
     channelRef.current?.postMessage({ type: "answer", answer });
 
-  return { channelRef, offer,  stopStreamTrigger, sendAnswer };
+  return { channelRef, offer, stopStreamTrigger, sendAnswer };
 };
 
 export default function Page() {

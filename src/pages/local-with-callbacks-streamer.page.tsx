@@ -4,12 +4,12 @@ import { LoggedInUserOnlyRoute } from "@/modules/routeProtector/LoggedInUserOnly
 import { LocalWithCallbacksStreamer } from "@/modules/webRtc/LocalWithCallbacksStreamer";
 import { useEffect, useRef, useState } from "react";
 
-export default function Page() {
+const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [answer, setAnswer] = useState<RTCSessionDescriptionInit | null>(null);
 
   useEffect(() => {
-    const channel = new BroadcastChannel("webrtc-demo2");
+    const channel = new BroadcastChannel(channelName);
     channelRef.current = channel;
 
     channel.onmessage = async (event) => {
@@ -20,24 +20,30 @@ export default function Page() {
       channel.close();
       channelRef.current = null;
     };
-  }, []);
+  }, [channelName]);
 
-  const handleSendOffer = (offer: RTCSessionDescriptionInit) => {
+  const sendOffer = (offer: RTCSessionDescriptionInit) => {
     channelRef.current?.postMessage({ type: "offer", offer });
   };
 
-  const handleSendStop = () => {
+  const sendStop = () => {
     channelRef.current?.postMessage({ type: "stop" });
     setAnswer(null);
   };
+
+  return { answer, sendOffer, sendStop };
+};
+
+export default function Page() {
+  const { answer, sendOffer, sendStop } = useStreamerWebRtcCommsAcrossTabs("webrtc-demo2");
 
   return (
     <LoggedInUserOnlyRoute>
       <MainFixedLayout>
         <H1>Local With Callbacks Streamer</H1>
         <LocalWithCallbacksStreamer
-          handleSendOffer={handleSendOffer}
-          handleSendStop={handleSendStop}
+          handleSendOffer={sendOffer}
+          handleSendStop={sendStop}
           answer={answer}
         />
       </MainFixedLayout>
