@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-export const LocalWithCallbacksStreamer = (p: {
+const useStreamerWebRtc = (p: {
   handleSendOffer: (offer: RTCSessionDescriptionInit) => void;
-  handleSendStop: () => void;
   answer: RTCSessionDescriptionInit | null;
 }) => {
-  const { handleSendOffer, handleSendStop, answer } = p;
-
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -15,70 +12,92 @@ export const LocalWithCallbacksStreamer = (p: {
 
   useEffect(() => {
     (async () => {
-      if (answer && peerConnectionRef.current)
-        await peerConnectionRef.current.setRemoteDescription(answer);
+      if (p.answer && peerConnectionRef.current)
+        await peerConnectionRef.current.setRemoteDescription(p.answer);
     })();
-  }, [answer]);
+  }, [p.answer]);
+
+  const startStreaming = async () => {
+    const peerConnection = new RTCPeerConnection();
+    peerConnectionRef.current = peerConnection;
+
+    const localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+
+    if (videoElementRef.current) {
+      videoElementRef.current.srcObject = localStream;
+    }
+
+    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    setIsStreaming(true);
+    setOfferCreated(true);
+  };
+
+  const sendOffer = () =>
+    p.handleSendOffer({
+      type: peerConnectionRef.current!.localDescription!.type,
+      sdp: peerConnectionRef.current!.localDescription!.sdp,
+    });
+
+  const stopStreaming = () => {
+    if (videoElementRef.current?.srcObject) {
+      const stream = videoElementRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoElementRef.current.srcObject = null;
+    }
+
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
+
+    setIsStreaming(false);
+    setOfferCreated(false);
+  };
+
+  return {
+    videoElementRef,
+    isStreaming,
+    offerCreated,
+    canSendOffer: offerCreated && !!peerConnectionRef.current?.localDescription,
+    startStreaming,
+    sendOffer,
+    stopStreaming,
+  };
+};
+
+export const LocalWithCallbacksStreamer = (p: {
+  handleSendOffer: (offer: RTCSessionDescriptionInit) => void;
+  handleSendStop: () => void;
+  answer: RTCSessionDescriptionInit | null;
+}) => {
+  const { handleSendStop } = p;
+
+  const { videoElementRef, isStreaming, canSendOffer, startStreaming, sendOffer, stopStreaming } =
+    useStreamerWebRtc({
+      handleSendOffer: p.handleSendOffer,
+      answer: p.answer,
+    });
 
   return (
     <div>
       <h2>Local With Callbacks Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
-        <Button
-          onClick={async () => {
-            const peerConnection = new RTCPeerConnection();
-            peerConnectionRef.current = peerConnection;
-
-            const localStream = await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: true,
-            });
-
-            if (videoElementRef.current) {
-              videoElementRef.current.srcObject = localStream;
-            }
-
-            localStream.getTracks().forEach((track) => {
-              peerConnection.addTrack(track, localStream);
-            });
-
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-
-            setIsStreaming(true);
-            setOfferCreated(true);
-          }}
-          disabled={isStreaming}
-        >
+        <Button onClick={startStreaming} disabled={isStreaming}>
           Start Streaming
         </Button>
-        <Button
-          onClick={() => {
-            handleSendOffer({
-              type: peerConnectionRef.current!.localDescription!.type, // guaranteed due to disabled logic
-              sdp: peerConnectionRef.current!.localDescription!.sdp, // guaranteed due to disabled logic
-            });
-          }}
-          disabled={!offerCreated && !peerConnectionRef.current?.localDescription}
-        >
+        <Button onClick={sendOffer} disabled={!canSendOffer}>
           Send Offer to Viewer
         </Button>
         <Button
           onClick={() => {
-            if (videoElementRef.current?.srcObject) {
-              const stream = videoElementRef.current.srcObject as MediaStream;
-              stream.getTracks().forEach((track) => track.stop());
-              videoElementRef.current.srcObject = null;
-            }
-
-            peerConnectionRef.current?.close();
-            peerConnectionRef.current = null;
-
+            stopStreaming();
             handleSendStop();
-
-            setIsStreaming(false);
-            setOfferCreated(false);
           }}
           variant="destructive"
           disabled={!isStreaming}
