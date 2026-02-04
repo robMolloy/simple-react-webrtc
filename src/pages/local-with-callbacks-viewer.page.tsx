@@ -4,13 +4,13 @@ import { LoggedInUserOnlyRoute } from "@/modules/routeProtector/LoggedInUserOnly
 import { LocalWithCallbacksViewer } from "@/modules/webRtc/LocalWithCallbacksViewer";
 import { useEffect, useRef, useState } from "react";
 
-export default function Page() {
+const useViewerWebRtcCommsAcrossTabs = (channelName: string) => {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [offer, setOffer] = useState<RTCSessionDescriptionInit | null>(null);
-  const [stopped, setStopped] = useState(false);
+  const [stopped, setStopped] = useState(true);
 
   useEffect(() => {
-    const channel = new BroadcastChannel("webrtc-demo2");
+    const channel = new BroadcastChannel(channelName);
     channelRef.current = channel;
 
     channel.onmessage = (event) => {
@@ -32,17 +32,19 @@ export default function Page() {
     };
   }, []);
 
+  const sendAnswer = (answer: RTCSessionDescriptionInit) =>
+    channelRef.current?.postMessage({ type: "answer", answer });
+
+  return { channelRef, offer, stopped, sendAnswer };
+};
+
+export default function Page() {
+  const { offer, stopped, sendAnswer } = useViewerWebRtcCommsAcrossTabs("webrtc-demo2");
   return (
     <LoggedInUserOnlyRoute>
       <MainFixedLayout>
         <H1>Local With Callbacks Viewer</H1>
-        <LocalWithCallbacksViewer
-          offer={offer}
-          stopped={stopped}
-          onSendAnswer={(answer: RTCSessionDescriptionInit) =>
-            channelRef.current?.postMessage({ type: "answer", answer })
-          }
-        />
+        <LocalWithCallbacksViewer offer={offer} stopped={stopped} onAnswerCreated={sendAnswer} />
       </MainFixedLayout>
     </LoggedInUserOnlyRoute>
   );

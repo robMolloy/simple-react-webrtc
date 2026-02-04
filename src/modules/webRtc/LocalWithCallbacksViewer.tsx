@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
 export const LocalWithCallbacksViewer = (p: {
-  onSendAnswer: (answer: RTCSessionDescriptionInit) => void;
+  onAnswerCreated: (answer: RTCSessionDescriptionInit) => void;
   offer: RTCSessionDescriptionInit | null;
   stopped: boolean;
 }) => {
-  const { onSendAnswer, offer, stopped } = p;
+  const { onAnswerCreated, offer, stopped } = p;
 
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -58,7 +58,7 @@ export const LocalWithCallbacksViewer = (p: {
             const answer = await peerConnectionRef.current.createAnswer();
             await peerConnectionRef.current.setLocalDescription(answer);
 
-            onSendAnswer(answer);
+            onAnswerCreated(answer);
 
             setAnswerCreated(true);
           }}
