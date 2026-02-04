@@ -23,7 +23,10 @@ const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
   }, [channelName]);
 
   const sendOffer = (offer: RTCSessionDescriptionInit) => {
-    channelRef.current?.postMessage({ type: "offer", offer });
+    channelRef.current?.postMessage({
+      type: "offer",
+      offer: { type: offer.type, sdp: offer.sdp },
+    });
   };
 
   const sendStop = () => {

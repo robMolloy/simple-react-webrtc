@@ -2,11 +2,16 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
 const useStreamerWebRtc = (p: {
-  handleSendOffer: (offer: RTCSessionDescriptionInit) => void;
+  handleSendOffer: (offer: RTCSessionDescription) => void;
+  handleSendStop: () => void;
   answer: RTCSessionDescriptionInit | null;
 }) => {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [streamingStatus, setStreamingStatus] = useState<
+    { success: false } | { success: true; stream: MediaStream }
+  >({
+    success: false,
+  });
 
   useEffect(() => {
     (async () => {
@@ -24,7 +29,7 @@ const useStreamerWebRtc = (p: {
       audio: true,
     });
 
-    streamRef.current = localStream;
+    setStreamingStatus({ success: true, stream: localStream });
 
     localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
 
@@ -34,21 +39,25 @@ const useStreamerWebRtc = (p: {
     return localStream;
   };
 
-  const sendOffer = () =>
-    p.handleSendOffer({
-      type: peerConnectionRef.current!.localDescription!.type,
-      sdp: peerConnectionRef.current!.localDescription!.sdp,
-    });
+  const sendOffer = () => {
+    if (!peerConnectionRef.current?.localDescription) return;
+
+    p.handleSendOffer(peerConnectionRef.current.localDescription);
+  };
 
   const stopStreaming = () => {
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+    p.handleSendStop();
+
+    if (!streamingStatus.success) return;
+
+    streamingStatus.stream.getTracks().forEach((track) => track.stop());
+    setStreamingStatus({ success: false });
   };
 
-  return { startStreaming, sendOffer, stopStreaming };
+  return { startStreaming, sendOffer, stopStreaming, streamingStatus };
 };
 
 export const LocalWithCallbacksStreamer = (p: {
@@ -56,48 +65,30 @@ export const LocalWithCallbacksStreamer = (p: {
   handleSendStop: () => void;
   answer: RTCSessionDescriptionInit | null;
 }) => {
-  const { handleSendStop } = p;
   const videoElementRef = useRef<HTMLVideoElement>(null!);
-  const [isStreaming, setIsStreaming] = useState(false);
 
-  const { startStreaming, sendOffer, stopStreaming } = useStreamerWebRtc({
+  const { startStreaming, streamingStatus, sendOffer, stopStreaming } = useStreamerWebRtc({
     handleSendOffer: p.handleSendOffer,
+    handleSendStop: p.handleSendStop,
     answer: p.answer,
   });
 
-  const handleStartStreaming = async () => {
-    const stream = await startStreaming();
-    if (videoElementRef.current) {
-      videoElementRef.current.srcObject = stream;
-    }
-    setIsStreaming(true);
-  };
-
-  const handleStopStreaming = () => {
-    stopStreaming();
-    if (videoElementRef.current) {
-      videoElementRef.current.srcObject = null;
-    }
-    handleSendStop();
-    setIsStreaming(false);
-  };
-
+  useEffect(() => {
+    if (!videoElementRef.current) return;
+    videoElementRef.current.srcObject = streamingStatus.success ? streamingStatus.stream : null;
+  }, [streamingStatus]);
   return (
     <div>
       <h2>Local With Callbacks Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
-        <Button onClick={handleStartStreaming} disabled={isStreaming}>
+        <Button onClick={startStreaming} disabled={streamingStatus.success}>
           Start Streaming
         </Button>
-        <Button onClick={sendOffer} disabled={!isStreaming}>
+        <Button onClick={sendOffer} disabled={!streamingStatus.success}>
           Send Offer to Viewer
         </Button>
-        <Button
-          onClick={handleStopStreaming}
-          variant="destructive"
-          disabled={!isStreaming}
-        >
+        <Button onClick={stopStreaming} variant="destructive" disabled={!streamingStatus.success}>
           Stop Streaming
         </Button>
       </div>
