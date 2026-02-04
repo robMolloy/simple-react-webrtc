@@ -6,7 +6,6 @@ const useStreamerWebRtc = (p: {
   answer: RTCSessionDescriptionInit | null;
 }) => {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
@@ -32,7 +31,7 @@ const useStreamerWebRtc = (p: {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
-    setIsStreaming(true);
+    return localStream;
   };
 
   const sendOffer = () =>
@@ -46,11 +45,10 @@ const useStreamerWebRtc = (p: {
     peerConnectionRef.current = null;
 
     streamRef.current?.getTracks().forEach((track) => track.stop());
-
-    setIsStreaming(false);
+    streamRef.current = null;
   };
 
-  return { streamRef, isStreaming, startStreaming, sendOffer, stopStreaming };
+  return { startStreaming, sendOffer, stopStreaming };
 };
 
 export const LocalWithCallbacksStreamer = (p: {
@@ -60,34 +58,43 @@ export const LocalWithCallbacksStreamer = (p: {
 }) => {
   const { handleSendStop } = p;
   const videoElementRef = useRef<HTMLVideoElement>(null!);
+  const [isStreaming, setIsStreaming] = useState(false);
 
-  const { streamRef, isStreaming, startStreaming, sendOffer, stopStreaming } = useStreamerWebRtc({
+  const { startStreaming, sendOffer, stopStreaming } = useStreamerWebRtc({
     handleSendOffer: p.handleSendOffer,
     answer: p.answer,
   });
 
-  useEffect(() => {
-    if (videoElementRef.current && streamRef.current) {
-      videoElementRef.current.srcObject = streamRef.current;
+  const handleStartStreaming = async () => {
+    const stream = await startStreaming();
+    if (videoElementRef.current) {
+      videoElementRef.current.srcObject = stream;
     }
-  }, [streamRef.current]);
+    setIsStreaming(true);
+  };
+
+  const handleStopStreaming = () => {
+    stopStreaming();
+    if (videoElementRef.current) {
+      videoElementRef.current.srcObject = null;
+    }
+    handleSendStop();
+    setIsStreaming(false);
+  };
 
   return (
     <div>
       <h2>Local With Callbacks Streamer</h2>
       <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "400px" }} />
       <div>
-        <Button onClick={startStreaming} disabled={isStreaming}>
+        <Button onClick={handleStartStreaming} disabled={isStreaming}>
           Start Streaming
         </Button>
         <Button onClick={sendOffer} disabled={!isStreaming}>
           Send Offer to Viewer
         </Button>
         <Button
-          onClick={() => {
-            stopStreaming();
-            handleSendStop();
-          }}
+          onClick={handleStopStreaming}
           variant="destructive"
           disabled={!isStreaming}
         >
