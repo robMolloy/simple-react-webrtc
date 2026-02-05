@@ -13,20 +13,16 @@ export type TStreamerWebRtcCommsHandler = {
 const useStreamerWebRtcAcrossTabsCommsHandler = (
   channelName: string,
 ): TStreamerWebRtcCommsHandler => {
-  const channelRef = useRef<BroadcastChannel | null>(null);
+  const channelRef = useRef<BroadcastChannel>(new BroadcastChannel(channelName));
   const [answer, setAnswer] = useState<RTCSessionDescriptionInit | null>(null);
 
   useEffect(() => {
-    const channel = new BroadcastChannel(channelName);
-    channelRef.current = channel;
-
-    channel.onmessage = async (event) => {
+    channelRef.current.onmessage = async (event) => {
       if (event.data.type === "answer") setAnswer(event.data.answer);
     };
 
     return () => {
-      channel.close();
-      channelRef.current = null;
+      channelRef.current.close();
     };
   }, [channelName]);
 

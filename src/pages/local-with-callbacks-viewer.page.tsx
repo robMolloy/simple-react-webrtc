@@ -13,14 +13,11 @@ export type TViewerWebRtcCommsHandler = {
 const useViewerWebRtcAcrossTabsCommsHandler = (channelName: string) => {
   const stopStreamTrigger = useTrigger();
 
-  const channelRef = useRef<BroadcastChannel | null>(null);
+  const channelRef = useRef<BroadcastChannel>(new BroadcastChannel(channelName));
   const [offer, setOffer] = useState<RTCSessionDescriptionInit | null>(null);
 
   useEffect(() => {
-    const channel = new BroadcastChannel(channelName);
-    channelRef.current = channel;
-
-    channel.onmessage = (event) => {
+    channelRef.current.onmessage = (event) => {
       if (event.data.type === "offer") return setOffer(event.data.offer);
 
       if (event.data.type === "stop") {
@@ -30,8 +27,7 @@ const useViewerWebRtcAcrossTabsCommsHandler = (channelName: string) => {
     };
 
     return () => {
-      channel.close();
-      channelRef.current = null;
+      channelRef.current.close();
     };
   }, []);
 
