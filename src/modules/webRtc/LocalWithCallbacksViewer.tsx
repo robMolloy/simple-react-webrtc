@@ -10,12 +10,10 @@ const useViewerWebRtc = (p: { commsHandler: TViewerWebRtcCommsHandler }) => {
   const [streamingStatus, setStreamingStatus] = useState<TStreamingStatus>({ success: false });
 
   const initializePeerConnection = () => {
-    const pc = new RTCPeerConnection();
-    pc.ontrack = (event) => {
+    peerConnectionRef.current = new RTCPeerConnection();
+    peerConnectionRef.current.ontrack = (event) => {
       if (event.streams[0]) setStreamingStatus({ success: true, stream: event.streams[0] });
     };
-    peerConnectionRef.current = pc;
-    return pc;
   };
 
   useEffect(() => {
