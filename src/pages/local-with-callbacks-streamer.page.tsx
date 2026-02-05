@@ -10,7 +10,9 @@ export type TStreamerWebRtcCommsHandler = {
   answer: RTCSessionDescriptionInit | null;
 };
 
-const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
+const useStreamerWebRtcAcrossTabsCommsHandler = (
+  channelName: string,
+): TStreamerWebRtcCommsHandler => {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [answer, setAnswer] = useState<RTCSessionDescriptionInit | null>(null);
 
@@ -44,7 +46,7 @@ const useStreamerWebRtcCommsAcrossTabs = (channelName: string) => {
 };
 
 export default function Page() {
-  const commsHandler = useStreamerWebRtcCommsAcrossTabs("webrtc-demo2");
+  const commsHandler = useStreamerWebRtcAcrossTabsCommsHandler("webrtc-demo2");
 
   return (
     <LoggedInUserOnlyRoute>

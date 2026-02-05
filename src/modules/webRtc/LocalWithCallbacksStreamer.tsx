@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import type { TStreamerWebRtcCommsHandler } from "@/pages/local-with-callbacks-streamer.page";
 import { useEffect, useRef, useState } from "react";
 
-type TStreamingStatus = { success: false } | { success: true; stream: MediaStream };
+export type TStreamingStatus = { success: false } | { success: true; stream: MediaStream };
 
 const useStreamerWebRtc = (p: { commsHandler: TStreamerWebRtcCommsHandler }) => {
   const peerConnectionRef = useRef<RTCPeerConnection>(new RTCPeerConnection());
